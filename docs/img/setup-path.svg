@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title id="t">The path from nothing to a working relay</title>
+  <desc id="d">Steps one to four get ready: run the check, fix what it flags, check your inbox by hand, and deploy with replies off. Step five tests it: send a test message from a second account, reply and see a dry-run result in the log, run the spoof test, then turn replies on.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#94a3b8"/></marker>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="598" rx="18" fill="#ffffff" stroke="#d9dee7"/>
+  <text x="40" y="52" font-size="24" font-weight="700" fill="#0f172a">From nothing to a working relay</text>
+  <text x="40" y="78" font-size="15" fill="#475569">The numbers match the steps in the README. Replies stay switched off until you have tested them.</text>
+
+  <!-- row 1 -->
+  <rect x="40" y="104" width="1120" height="26" rx="13" fill="#dbeafe"/>
+  <text x="600" y="122" font-size="13" font-weight="700" fill="#1e3a8a" text-anchor="middle" letter-spacing="0.6">GET READY AND DEPLOY</text>
+  <g font-size="13">
+    <g>
+      <rect x="40" y="144" width="262" height="168" rx="12" fill="#f8fafc" stroke="#bfdbfe"/>
+      <circle cx="70" cy="174" r="15" fill="#2563eb"/><text x="70" y="179" fill="#fff" font-weight="700" font-size="15" text-anchor="middle">1</text>
+      <text x="96" y="180" font-size="16" font-weight="700" fill="#0f172a">Run the check</text>
+      <text x="58" y="218" fill="#475569">One read-only command looks at</text>
+      <text x="58" y="236" fill="#475569">your AWS account and DNS and</text>
+      <text x="58" y="254" fill="#475569">says what is missing.</text>
+      <text x="58" y="288" font-size="12" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">scripts/check.py</text>
+    </g>
+    <g>
+      <rect x="326" y="144" width="262" height="168" rx="12" fill="#f8fafc" stroke="#bfdbfe"/>
+      <circle cx="356" cy="174" r="15" fill="#2563eb"/><text x="356" y="179" fill="#fff" font-weight="700" font-size="15" text-anchor="middle">2</text>
+      <text x="382" y="180" font-size="16" font-weight="700" fill="#0f172a">Fix what it flags</text>
+      <text x="344" y="218" fill="#475569">Usually: the domain's SES</text>
+      <text x="344" y="236" fill="#475569">identity and DNS records, the</text>
+      <text x="344" y="254" fill="#475569">SES sandbox, or a receipt rule</text>
+      <text x="344" y="272" fill="#475569">set. Then run the check again.</text>
+    </g>
+    <g>
+      <rect x="612" y="144" width="262" height="168" rx="12" fill="#f8fafc" stroke="#bfdbfe"/>
+      <circle cx="642" cy="174" r="15" fill="#2563eb"/><text x="642" y="179" fill="#fff" font-weight="700" font-size="15" text-anchor="middle">3</text>
+      <text x="668" y="180" font-size="16" font-weight="700" fill="#0f172a">Check your inbox</text>
+      <text x="630" y="218" fill="#475569">By hand: your inbox's provider</text>
+      <text x="630" y="236" fill="#475569">must sign your mail with your</text>
+      <text x="630" y="254" fill="#475569">inbox's own domain (DKIM).</text>
+      <text x="630" y="272" fill="#475569">No AWS call can see this.</text>
+    </g>
+    <g>
+      <rect x="898" y="144" width="262" height="168" rx="12" fill="#f8fafc" stroke="#bfdbfe"/>
+      <circle cx="928" cy="174" r="15" fill="#2563eb"/><text x="928" y="179" fill="#fff" font-weight="700" font-size="15" text-anchor="middle">4</text>
+      <text x="954" y="180" font-size="16" font-weight="700" fill="#0f172a">Deploy, replies off</text>
+      <text x="916" y="218" fill="#475569">Run the command the check</text>
+      <text x="916" y="236" fill="#475569">printed. One stack: a mail rule,</text>
+      <text x="916" y="254" fill="#475569">a bucket, a table and a function.</text>
+      <text x="916" y="272" fill="#475569">Then add the MX record.</text>
+    </g>
+  </g>
+  <g stroke="#94a3b8" stroke-width="2" fill="none">
+    <line x1="304" y1="228" x2="323" y2="228" marker-end="url(#a)"/>
+    <line x1="590" y1="228" x2="609" y2="228" marker-end="url(#a)"/>
+    <line x1="876" y1="228" x2="895" y2="228" marker-end="url(#a)"/>
+  </g>
+
+  <!-- row 2 -->
+  <rect x="40" y="340" width="1120" height="26" rx="13" fill="#d1fae5"/>
+  <text x="600" y="358" font-size="13" font-weight="700" fill="#065f46" text-anchor="middle" letter-spacing="0.6">STEP 5: TEST, THEN SWITCH REPLIES ON</text>
+  <g font-size="13">
+    <g>
+      <rect x="40" y="380" width="262" height="168" rx="12" fill="#f8fafc" stroke="#a7f3d0"/>
+      <circle cx="70" cy="410" r="15" fill="#059669"/><text x="70" y="415" fill="#fff" font-weight="700" font-size="13" text-anchor="middle">5.1</text>
+      <text x="96" y="416" font-size="16" font-weight="700" fill="#0f172a">Send a test</text>
+      <text x="58" y="454" fill="#475569">From a second account, to your</text>
+      <text x="58" y="472" fill="#475569">alias. It arrives in your inbox.</text>
+      <text x="58" y="490" fill="#475569">Inbound mail now works.</text>
+      <text x="58" y="524" font-size="12" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">outcome: forwarded</text>
+    </g>
+    <g>
+      <rect x="326" y="380" width="262" height="168" rx="12" fill="#f8fafc" stroke="#a7f3d0"/>
+      <circle cx="356" cy="410" r="15" fill="#059669"/><text x="356" y="415" fill="#fff" font-weight="700" font-size="13" text-anchor="middle">5.2</text>
+      <text x="382" y="416" font-size="16" font-weight="700" fill="#0f172a">Reply to it</text>
+      <text x="344" y="454" fill="#475569">Your reply is checked and</text>
+      <text x="344" y="472" fill="#475569">logged, not sent. This shows</text>
+      <text x="344" y="490" fill="#475569">the relay recognises you.</text>
+      <text x="344" y="524" font-size="12" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">outcome: dry-run:reply</text>
+    </g>
+    <g>
+      <rect x="612" y="380" width="262" height="168" rx="12" fill="#fffbeb" stroke="#fcd34d"/>
+      <circle cx="642" cy="410" r="15" fill="#d97706"/><text x="642" y="415" fill="#fff" font-weight="700" font-size="13" text-anchor="middle">5.3</text>
+      <text x="668" y="416" font-size="16" font-weight="700" fill="#0f172a">Spoof test</text>
+      <text x="790" y="416" font-size="12" font-weight="700" fill="#b45309" letter-spacing="0.6">THE GATE</text>
+      <text x="630" y="454" fill="#475569">A forged message claiming to</text>
+      <text x="630" y="472" fill="#475569">be you must be dropped, so</text>
+      <text x="630" y="490" fill="#475569">nobody else can send as you.</text>
+      <text x="630" y="524" font-size="12" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">outcome: dropped:auth:...</text>
+    </g>
+    <g>
+      <rect x="898" y="380" width="262" height="168" rx="12" fill="#f8fafc" stroke="#a7f3d0"/>
+      <circle cx="928" cy="410" r="15" fill="#059669"/><text x="928" y="415" fill="#fff" font-weight="700" font-size="13" text-anchor="middle">5.4</text>
+      <text x="954" y="416" font-size="16" font-weight="700" fill="#0f172a">Turn replies on</text>
+      <text x="916" y="454" fill="#475569">One parameter. Your replies</text>
+      <text x="916" y="472" fill="#475569">now go out under your alias.</text>
+      <text x="916" y="524" font-size="12" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">outcome: relayed</text>
+    </g>
+  </g>
+  <g stroke="#94a3b8" stroke-width="2" fill="none">
+    <line x1="304" y1="464" x2="323" y2="464" marker-end="url(#a)"/>
+    <line x1="590" y1="464" x2="609" y2="464" marker-end="url(#a)"/>
+    <line x1="876" y1="464" x2="895" y2="464" marker-end="url(#a)"/>
+  </g>
+
+  <text x="600" y="578" font-size="14" fill="#475569" text-anchor="middle">The relay can be switched off again with one parameter at any point.</text>
+</svg>

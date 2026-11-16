@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="1200" height="640" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title id="t">How a message travels through the relay</title>
+  <desc id="d">A correspondent writes to your alias. The relay forwards the message to your private inbox under a generated reply address. You reply as usual, and the relay delivers your reply from the alias, with no header naming your private address. Message bodies are not rewritten.</desc>
+  <defs>
+    <marker id="in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#2563eb"/></marker>
+    <marker id="out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#059669"/></marker>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="638" rx="18" fill="#ffffff" stroke="#d9dee7"/>
+  <text x="40" y="52" font-size="24" font-weight="700" fill="#0f172a">How a message travels</text>
+  <text x="40" y="78" font-size="15" fill="#475569">Mail to your alias reaches your own inbox. Your reply goes back out under the alias.</text>
+
+  <!-- lanes -->
+  <g>
+    <rect x="40" y="104" width="270" height="436" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <rect x="465" y="104" width="270" height="436" rx="14" fill="#fff7ed" stroke="#fed7aa"/>
+    <rect x="890" y="104" width="270" height="436" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="175" y="136" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">Correspondent</text>
+    <text x="600" y="136" font-size="16" font-weight="700" fill="#9a3412" text-anchor="middle">The relay, in your AWS account</text>
+    <text x="1025" y="136" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">Your private inbox</text>
+  </g>
+
+  <!-- correspondent cards -->
+  <g font-size="13">
+    <rect x="58" y="160" width="234" height="96" rx="10" fill="#ffffff" stroke="#bfdbfe"/>
+    <text x="74" y="184" font-size="12" font-weight="700" fill="#2563eb" letter-spacing="0.6">SENDS</text>
+    <text x="74" y="208" fill="#334155">To:</text><text x="112" y="208" font-weight="600" fill="#0f172a">you@example.com</text>
+    <text x="74" y="232" fill="#334155">From:</text><text x="112" y="232" fill="#0f172a">bob@example.org</text>
+
+    <rect x="58" y="388" width="234" height="96" rx="10" fill="#ffffff" stroke="#a7f3d0"/>
+    <text x="74" y="412" font-size="12" font-weight="700" fill="#059669" letter-spacing="0.6">RECEIVES</text>
+    <text x="74" y="436" fill="#334155">From:</text><text x="112" y="436" font-weight="600" fill="#0f172a">you@example.com</text>
+    <text x="74" y="460" fill="#334155">Subject:</text><text x="126" y="460" fill="#0f172a">Re: Hello</text>
+  </g>
+
+  <!-- inbox cards -->
+  <g font-size="13">
+    <rect x="908" y="160" width="234" height="96" rx="10" fill="#ffffff" stroke="#bfdbfe"/>
+    <text x="924" y="184" font-size="12" font-weight="700" fill="#2563eb" letter-spacing="0.6">RECEIVES</text>
+    <text x="924" y="208" fill="#334155">From:</text><text x="962" y="208" font-weight="600" fill="#0f172a">Bob (bob at example.org)</text>
+    <text x="924" y="232" fill="#64748b">reply+TOKEN@example.com</text>
+
+    <rect x="908" y="388" width="234" height="96" rx="10" fill="#ffffff" stroke="#a7f3d0"/>
+    <text x="924" y="412" font-size="12" font-weight="700" fill="#059669" letter-spacing="0.6">REPLIES, AS USUAL</text>
+    <text x="924" y="436" fill="#334155">To:</text><text x="952" y="436" fill="#0f172a">reply+TOKEN@example.com</text>
+    <text x="924" y="460" fill="#64748b">No "send as" setup in the mail app</text>
+  </g>
+
+  <!-- relay parts -->
+  <g font-size="13">
+    <rect x="483" y="160" width="234" height="324" rx="10" fill="#ffffff" stroke="#fdba74"/>
+    <text x="499" y="190" font-weight="700" fill="#0f172a">Amazon SES</text>
+    <text x="499" y="208" fill="#64748b">receives and sends the mail</text>
+    <line x1="499" y1="226" x2="701" y2="226" stroke="#ffedd5"/>
+    <text x="499" y="254" font-weight="700" fill="#0f172a">S3 bucket</text>
+    <text x="499" y="272" fill="#64748b">keeps a raw copy for 30 days</text>
+    <line x1="499" y1="290" x2="701" y2="290" stroke="#ffedd5"/>
+    <text x="499" y="318" font-weight="700" fill="#0f172a">Lambda function</text>
+    <text x="499" y="336" fill="#64748b">checks the sender, rewrites</text>
+    <text x="499" y="352" fill="#64748b">the headers, never the body</text>
+    <line x1="499" y1="370" x2="701" y2="370" stroke="#ffedd5"/>
+    <text x="499" y="398" font-weight="700" fill="#0f172a">DynamoDB table</text>
+    <text x="499" y="416" fill="#64748b">remembers which reply address</text>
+    <text x="499" y="432" fill="#64748b">belongs to which correspondent</text>
+  </g>
+
+  <!-- arrows: inbound (top), outbound (bottom) -->
+  <g fill="none" stroke-width="2.5">
+    <line x1="318" y1="208" x2="455" y2="208" stroke="#2563eb" marker-end="url(#in)"/>
+    <line x1="743" y1="208" x2="880" y2="208" stroke="#2563eb" marker-end="url(#in)"/>
+    <line x1="880" y1="436" x2="745" y2="436" stroke="#059669" marker-end="url(#out)"/>
+    <line x1="455" y1="436" x2="320" y2="436" stroke="#059669" marker-end="url(#out)"/>
+  </g>
+  <g font-size="13" text-anchor="middle">
+    <circle cx="387" cy="176" r="12" fill="#2563eb"/><text x="387" y="181" fill="#ffffff" font-weight="700">1</text>
+    <text x="387" y="232" fill="#1e3a8a">writes to</text><text x="387" y="249" fill="#1e3a8a">your alias</text>
+    <circle cx="812" cy="176" r="12" fill="#2563eb"/><text x="812" y="181" fill="#ffffff" font-weight="700">2</text>
+    <text x="812" y="232" fill="#1e3a8a">forwarded to</text><text x="812" y="249" fill="#1e3a8a">your inbox</text>
+    <circle cx="812" cy="404" r="12" fill="#059669"/><text x="812" y="409" fill="#ffffff" font-weight="700">3</text>
+    <text x="812" y="460" fill="#065f46">you hit</text><text x="812" y="477" fill="#065f46">Reply</text>
+    <circle cx="387" cy="404" r="12" fill="#059669"/><text x="387" y="409" fill="#ffffff" font-weight="700">4</text>
+    <text x="387" y="460" fill="#065f46">sent from</text><text x="387" y="477" fill="#065f46">your alias</text>
+  </g>
+
+  <!-- footer -->
+  <rect x="40" y="564" width="1120" height="48" rx="12" fill="#f1f5f9"/>
+  <text x="600" y="594" font-size="15" fill="#0f172a" text-anchor="middle">What the correspondent receives comes from <tspan font-weight="700">you@example.com</tspan>, with no header naming your private address. Message bodies are not rewritten.</text>
+</svg>

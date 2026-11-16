@@ -1,0 +1,242 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Reverse-alias mail relay for one alias on a domain with a verified SES identity and an MX record pointing at SES
+
+Parameters:
+  Domain:
+    Type: String
+    Description: Relay domain, lowercase. It needs a verified SES identity and an MX record pointing at SES.
+    AllowedPattern: ^[a-z0-9.-]+$
+  Alias:
+    Type: String
+    Description: Alias address on the relay domain that correspondents write to, lowercase
+    AllowedPattern: ^[a-z0-9._-]+@[a-z0-9.-]+$
+  AliasDisplayName:
+    Type: String
+    Default: ''
+    Description: Display name on relayed replies
+  PrivateAddress:
+    Type: String
+    Description: Private inbox that receives forwards and sends replies, with a lowercase domain
+    AllowedPattern: ^[^@\s]+@[a-z0-9.-]+$
+  RuleSetName:
+    Type: String
+    Default: default-rule-set
+    AllowedPattern: ^[A-Za-z0-9._-]{1,64}$
+    Description: Name of the active SES receipt rule set. The stack adds one rule to it and never creates or activates a set.
+  AfterRule:
+    Type: String
+    Default: ''
+    AllowedPattern: ^[A-Za-z0-9._-]{0,64}$
+    Description: Existing rule in that set to place relay-inbound after. Empty puts it first.
+  MaxBytes:
+    Type: Number
+    Default: 39845888
+  RetentionDays:
+    Type: Number
+    Default: 30
+  RuleEnabled:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+  OutboundEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: When false the reply and compose paths check and log but relay nothing
+
+Conditions:
+  RuleOn: !Equals [!Ref RuleEnabled, 'true']
+  HasAfter: !Not [!Equals [!Ref AfterRule, '']]
+
+Resources:
+  MailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub mailrelay-${AWS::AccountId}-${AWS::Region}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-raw
+            Status: Enabled
+            Prefix: raw/
+            ExpirationInDays: !Ref RetentionDays
+
+  MailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowSesReceipt
+            Effect: Allow
+            Principal:
+              Service: ses.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub ${MailBucket.Arn}/raw/*
+            Condition:
+              StringEquals:
+                AWS:SourceAccount: !Ref AWS::AccountId
+              ArnEquals:
+                AWS:SourceArn: !Sub arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:receipt-rule-set/${RuleSetName}:receipt-rule/relay-inbound
+
+  RelayTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: RetainExceptOnCreate
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: mailrelay
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expires
+        Enabled: true
+
+  RelayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/mailrelay
+      RetentionInDays: 30
+
+  RelayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Reads stored mail and relays it through SES
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: RelayMail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Logs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/mailrelay:*
+              - Sid: ReadRaw
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub ${MailBucket.Arn}/raw/*
+              - Sid: Table
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource: !GetAtt RelayTable.Arn
+              - Sid: SendForward
+                Effect: Allow
+                Action: ses:SendRawEmail
+                Resource: !Sub arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${Domain}
+                Condition:
+                  StringLike:
+                    ses:FromAddress:
+                      - !Sub reply+*@${Domain}
+                      - !Sub relay@${Domain}
+                  ForAllValues:StringEquals:
+                    ses:Recipients:
+                      - !Ref PrivateAddress
+              - Sid: SendReply
+                Effect: Allow
+                Action: ses:SendRawEmail
+                Resource: !Sub arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${Domain}
+                Condition:
+                  StringEquals:
+                    ses:FromAddress: !Ref Alias
+
+  RelayFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: RelayLogGroup
+    Properties:
+      FunctionName: mailrelay
+      Description: Forwards alias mail to a private inbox and relays its replies
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt RelayRole.Arn
+      MemorySize: 1024
+      Timeout: 120
+      ReservedConcurrentExecutions: 2
+      Environment:
+        Variables:
+          BUCKET: !Ref MailBucket
+          PREFIX: raw/
+          TABLE: !Ref RelayTable
+          DOMAIN: !Ref Domain
+          ALIASES: !Ref Alias
+          ALIAS_NAME: !Ref AliasDisplayName
+          PRIVATE: !Ref PrivateAddress
+          MAX_BYTES: !Ref MaxBytes
+          OUTBOUND: !Ref OutboundEnabled
+      Code:
+        ZipFile: |
+          # RELAY_SOURCE
+
+  SesInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RelayFunction
+      Principal: ses.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:receipt-rule-set/${RuleSetName}:receipt-rule/relay-inbound
+
+  RelayReceiptRule:
+    Type: AWS::SES::ReceiptRule
+    DependsOn:
+      - MailBucketPolicy
+      - SesInvokePermission
+    Properties:
+      RuleSetName: !Ref RuleSetName
+      After: !If [HasAfter, !Ref AfterRule, !Ref AWS::NoValue]
+      Rule:
+        Name: relay-inbound
+        Enabled: !If [RuleOn, true, false]
+        Recipients:
+          - !Ref Alias
+          - !Sub reply@${Domain}
+        ScanEnabled: true
+        TlsPolicy: Optional
+        Actions:
+          - S3Action:
+              BucketName: !Ref MailBucket
+              ObjectKeyPrefix: raw/
+          - LambdaAction:
+              FunctionArn: !GetAtt RelayFunction.Arn
+              InvocationType: Event
+          - StopAction:
+              Scope: RuleSet
+
+Outputs:
+  BucketName:
+    Value: !Ref MailBucket
+  FunctionName:
+    Value: !Ref RelayFunction
+  TableName:
+    Value: !Ref RelayTable
+  ReceiptRule:
+    Value: relay-inbound
